@@ -1,6 +1,6 @@
 
 var router = require('express')();
-var db = require('./DBConnect');
+var db = require('../database/DBConnect');
 
 // Lấy danh sách team
 router.get('/',function(req,res){
