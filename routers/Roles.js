@@ -16,33 +16,33 @@ router.post('/addrole', async (req, res) => {
 });
 
 // Lấy danh sách roles
-router.get('/',function(req,res){
-    var query = "select * from Roles";
-    db.query(query,function(err,result){
-        if(err) throw err;
-        res.status(200).json(result);
-    });
+router.get('/', function (req, res) {
+  var query = "select * from Roles";
+  db.query(query, function (err, result) {
+    if (err) throw err;
+    res.status(200).json(result);
+  });
 })
 
 
 // Trong file server
 router.get('/roles/:roleID', async (req, res) => {
-    const roleID = req.params.roleID;
-    try {
-      const connection = await pool.getConnection();
-      const [rows] = await connection.execute('SELECT * FROM Roles WHERE roleID = ?', [roleID]);
-      connection.release();
-  
-      if (rows.length > 0) {
-        res.json(rows[0]);
-      } else {
-        res.status(404).json({ error: 'Role not found' });
-      }
-    } catch (error) {
-      console.error('Error: ', error);
-      res.status(500).json({ error: 'Internal Server Error' });
+  const roleID = req.params.roleID;
+  try {
+    const connection = await pool.getConnection();
+    const [rows] = await connection.execute('SELECT * FROM Roles WHERE roleID = ?', [roleID]);
+    connection.release();
+
+    if (rows.length > 0) {
+      res.json(rows[0]);
+    } else {
+      res.status(404).json({ error: 'Role not found' });
     }
-  });
+  } catch (error) {
+    console.error('Error: ', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
 
 var path = require('path');
 module.exports = router;
