@@ -1,5 +1,5 @@
 var router = require('express')();
-var db = require('./DBConnect');
+var db = require('../database/DBConnect');
 
 // tạo chức năng đăng nhập
 router.post('/add', function (req, res) {
