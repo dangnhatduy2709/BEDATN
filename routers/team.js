@@ -87,45 +87,55 @@ router.delete("/team-member/:teamMemberID", function (req, res) {
 });
 
 // Tạo API để thêm thành viên mới vào nhóm
-router.post("/add_team_member", (req, res) => {
-  const { teamID, userID, joinDate } = req.body;
-  const now = new Date().toISOString().slice(0, 19).replace("T", " ");
-  const getRoleQuery = `SELECT u.roleID, r.roleName FROM Users u JOIN Roles r ON u.roleID = r.roleID WHERE u.userID = ?`;
+router.post("/add_team_member", async (req, res) => {
+  const { teamID, userIDs, joinDate } = req.body;
 
-  db.query(getRoleQuery, [userID], (roleErr, roleResult) => {
-    if (roleErr) {
-      console.error("Error executing role query:", roleErr);
-      return res
-        .status(500)
-        .json({ error: "An error occurred while fetching user roles" });
-    }
+  try {
+    const now = new Date().toISOString().slice(0, 19).replace("T", " ");
 
-    if (roleResult.length > 0) {
-      const { roleID, roleName } = roleResult[0];
-      const addMemberQuery = `
-        INSERT INTO TeamMembers (teamID, userID, roleID, joinDate, create_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)`;
+    const addUserPromises = userIDs.map(userID => {
+      return new Promise((resolve, reject) => {
+        const getRoleQuery = `
+          SELECT u.roleID, r.roleName 
+          FROM Users u 
+          JOIN Roles r ON u.roleID = r.roleID 
+          WHERE u.userID = ?`;
 
-      db.query(
-        addMemberQuery,
-        [teamID, userID, roleID, joinDate, now, now],
-        (err, result) => {
-          if (err) {
-            console.error("Error executing insert query:", err);
-            return res
-              .status(500)
-              .json({ error: "An error occurred while adding team member" });
-          }
-          return res.json({
-            message: "Team member added successfully",
-            roleName,
-          });
-        }
-      );
-    } else {
-      return res.status(404).json({ error: "User roles not found" });
-    }
-  });
+        db.query(getRoleQuery, [userID], (roleErr, roleResult) => {
+          if (roleErr) return reject("Error fetching role for userID: " + userID);
+
+          if (roleResult.length === 0) return reject("Role not found for userID: " + userID);
+
+          const { roleID, roleName } = roleResult[0];
+
+          const addMemberQuery = `
+            INSERT INTO TeamMembers (teamID, userID, roleID, joinDate, create_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)`;
+
+          db.query(
+            addMemberQuery,
+            [teamID, userID, roleID, joinDate, now, now],
+            (insertErr, result) => {
+              if (insertErr) return reject("Insert failed for userID: " + userID);
+
+              resolve({ userID, roleName });
+            }
+          );
+        });
+      });
+    });
+
+    const results = await Promise.all(addUserPromises);
+
+    res.json({
+      message: "All team members added successfully",
+      members: results,
+    });
+
+  } catch (error) {
+    console.error("Error adding team members:", error);
+    res.status(500).json({ error: error.toString() });
+  }
 });
 
 router.post("/add_team", (req, res) => {

@@ -164,7 +164,7 @@ router.post("/add", (req, res) => {
 // Lấy danh sách dự án
 router.get("/", function (req, res) {
   const query = `
-    SELECT projects.*, projectDetails.*,
+    SELECT projects.*, projectDetails.*, projects.projectID AS projectMainID,
      user.fullName AS leadFullName ,
      user.picture AS imgUser ,
     team.teamName AS teamFullName
