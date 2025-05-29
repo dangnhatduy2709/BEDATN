@@ -152,7 +152,7 @@ router.post("/addtask", (req, res) => {
       taskData.projectID,
       taskData.taskType,
       taskData.summary,
-      taskData.userID,
+      taskData.taskManagerID,
       taskData.status,
       taskData.createdDate,
       taskData.endDate,
