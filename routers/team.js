@@ -60,6 +60,22 @@ router.get("/team-menber", function (req, res) {
   });
 });
 
+router.get("/getUserByProject/:userId", function (req, res) {
+  const userId = req.params.userId;
+
+     var query = `
+        SELECT COUNT(DISTINCT TeamMembers.teamID) AS teamCount FROM TeamMembers where TeamMembers.userID = ${userId}`;
+
+  db.query(query, function (err, result) {
+    if (err) {
+      res.status(500).send(err);
+    } else {
+      res.status(200).json(result);
+      console.log(result);
+    }
+  });
+});
+
 // Xóa thành viên khỏi nhóm
 router.delete("/team-member/:teamMemberID", function (req, res) {
   const teamMemberID = req.params.teamMemberID;
