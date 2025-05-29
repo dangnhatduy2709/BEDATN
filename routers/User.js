@@ -244,16 +244,26 @@ router.delete("/delete_user/:userID", (req, res) => {
             .send("Lỗi khi xóa user khỏi projectdetailsnew");
         }
 
-        // 4. Cuối cùng xóa user
-        const deleteUser = "DELETE FROM Users WHERE userID = ?";
-        db.query(deleteUser, [userID], (err3, result3) => {
+        const deleteTeamMember =
+        "DELETE FROM teammembers WHERE userID = ?";
+        db.query(deleteTeamMember, [userID], (err3, result3) => {
           if (err3) {
-            console.error("Lỗi khi xóa user:", err3);
-            return res.status(500).send("Lỗi khi xóa user khỏi bảng Users");
+            console.error("Lỗi khi xóa từ teammembers:", err3);
+            return res
+              .status(500)
+              .send("Lỗi khi xóa user khỏi teammembers");
           }
-
-          res.status(200).send("Xóa user thành công");
-        });
+          // 4. Cuối cùng xóa user
+          const deleteUser = "DELETE FROM Users WHERE userID = ?";
+          db.query(deleteUser, [userID], (err3, result3) => {
+            if (err3) {
+              console.error("Lỗi khi xóa user:", err3);
+              return res.status(500).send("Lỗi khi xóa user khỏi bảng Users");
+            }
+  
+            res.status(200).send("Xóa user thành công");
+          });
+        })
       });
     });
   });
@@ -297,12 +307,11 @@ router.put("/:userID", async (req, res) => {
     emailAddress,
     phoneNumber,
     roleID,
-    lastLogin,
   } = req.body;
-
+  
   try {
-    const [result] = await db.query(
-      "UPDATE Users SET picture = ?, fullName = ?, passwordHash = ?, emailAddress = ?, phoneNumber = ?, roleID = ?, lastLogin = ? WHERE userID = ? AND isDeleted = 0",
+    const [result] = await db.promise().query(
+      "UPDATE Users SET picture = ?, fullName = ?, passwordHash = ?, emailAddress = ?, phoneNumber = ?, roleID = ?, lastLogin = ? WHERE userID = ?",
       [
         picture,
         fullName,
@@ -310,7 +319,7 @@ router.put("/:userID", async (req, res) => {
         emailAddress,
         phoneNumber,
         roleID,
-        lastLogin,
+        new Date().toISOString().slice(0, 19).replace('T', ' '),
         userID,
       ]
     );

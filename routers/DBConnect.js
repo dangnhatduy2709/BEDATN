@@ -1,9 +1,10 @@
 var mysql = require('mysql2');
 var connection = mysql.createConnection({
-    host: process.env.DB_HOST, 
-    user: process.env.DB_USERNAME, 
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_DBNAME,
+    host: 'localhost',
+    port: 3306,
+    user: 'root', 
+    password: '123456',
+    database: 'datn1',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0

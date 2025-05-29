@@ -1,5 +1,5 @@
 var router = require('express')();
-var db = require('../database/DBConnect');
+var db = require('./DBConnect');
 
 
 var path = require('path');
