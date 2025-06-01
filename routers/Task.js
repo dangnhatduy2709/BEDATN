@@ -315,5 +315,67 @@ router.get("/api/downloadExcel", async (req, res) => {
   }
 });
 
+router.put("/updatetaskdata/:taskID", (req, res) => {
+  const taskID = req.params.taskID;
+  const taskData = req.body;
+  const updateTaskQuery = `
+    UPDATE Tasks
+    SET projectID = ?, taskType = ?, summary = ?, userID = ?, status = ?, createdDate = ?, endDate = ?, priority = ?, description = ?
+    WHERE taskID = ?;
+  `;
+
+  db.query(
+    updateTaskQuery,
+    [
+      taskData.projectID,
+      taskData.taskType,
+      taskData.summary,
+      taskData.taskManagerID,
+      taskData.status,
+      formatDateForMySQL(taskData.createdDate),
+      formatDateForMySQL(taskData.endDate),
+      taskData.priority,
+      taskData.description,
+      taskID,
+    ],
+    (errTask, resultTask) => {
+      if (errTask) {
+        console.error(errTask);
+        res.status(500).json({ error: "Lỗi máy chủ khi cập nhật công việc" });
+      } else {
+        const updateTaskDetailsQuery = `
+          UPDATE TaskDetails
+          SET taskDescription = ?, actualHoursSpent = ?, taskManagerID = ?
+          WHERE taskID = ?;
+        `;
+
+        db.query(
+          updateTaskDetailsQuery,
+          [
+            taskData.taskDescription,
+            taskData.actualHoursSpent,
+            taskData.taskManagerID,
+            taskID,
+          ],
+          (errDetails, resultDetails) => {
+            if (errDetails) {
+              console.error(errDetails);
+              res.status(500).json({ error: "Lỗi khi cập nhật chi tiết công việc" });
+            } else {
+              res.status(200).json({ message: "Cập nhật công việc thành công" });
+            }
+          }
+        );
+      }
+    }
+  );
+});
+
+function formatDateForMySQL(dateString) {
+  const d = new Date(dateString);
+  const pad = (n) => n.toString().padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 var path = require("path");
 module.exports = router;
