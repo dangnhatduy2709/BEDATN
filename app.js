@@ -6,6 +6,7 @@ const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
 const ExcelJS = require("exceljs");
 const connection = require("./routers/DBConnect");
+const multer = require('multer');
 
 app.use(morgan("dev"));
 const port = 3000;
@@ -16,6 +17,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 var projectRouter = require("./routers/Project");
 app.use("/project", projectRouter);
@@ -40,6 +42,25 @@ app.use("/notifications", notificationsRouter);
 
 var backlogRouter = require("./routers/backlog");
 app.use("/backlog", backlogRouter);
+
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/');
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const name = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, name + ext);
+  }
+});
+
+const upload = multer({ storage });
+
+app.post('/upload', upload.single('file'), (req, res) => {
+  console.log(req.file);
+  res.json({ message: 'Upload thành công', file: req.file });
+});
 connection.connect((err) => {
   if (err) {
     console.error("Database connection failed:", err.stack);
