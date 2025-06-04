@@ -15,6 +15,18 @@ router.get("/", function (req, res) {
   });
 });
 
+router.get("/thongke", (req, res) => {
+  var query = `SELECT * FROM Tasks`;
+
+  db.query(query, (err, result) => {
+    if (err) {
+      console.error("Lỗi truy vấn MySQL:", err);
+      return res.status(500).json({ message: "Lỗi máy chủ", error: err });
+    }
+    res.status(200).json(result);
+  });
+});
+
 // Lấy ra công việc của dự án
 router.get("/:projectId", (req, res) => {
   const projectId = req.params.projectId;
@@ -25,7 +37,7 @@ router.get("/:projectId", (req, res) => {
       WHERE projectID = ?;
     `;
 
-  connection.query(query, [projectId], (error, results) => {
+  db.query(query, [projectId], (error, results) => {
     if (error) {
       console.error("Error fetching project tasks:", error);
       res.status(500).json({ error: "Internal Server Error" });
