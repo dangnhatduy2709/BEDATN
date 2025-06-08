@@ -59,7 +59,8 @@ router.get("/tasks/:id", (req, res) => {
       t.*,
       td.*,
       u.*,
-      f.*
+      f.*,
+      u_task.fullName as NameManager
     FROM
       Projects p
     LEFT JOIN
@@ -72,6 +73,8 @@ router.get("/tasks/:id", (req, res) => {
       Users u ON pd.userID = u.userID
     LEFT JOIN
       Teams f ON pd.teamID = f.teamID
+    LEFT JOIN
+      Users u_task ON t.userID = u_task.userID
     WHERE
       p.projectID = ?;
   `;
@@ -154,30 +157,41 @@ router.post("/addtask", (req, res) => {
   const taskData = req.body;
 
   const insertTaskQuery = `
-    INSERT INTO Tasks (projectID, taskType, summary, userID, status, createdDate, endDate, priority, description)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
+    INSERT INTO Tasks (projectID, taskType, summary, userID, status, createdDate, endDate, priority, description, importance)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
   `;
 
-  db.query(
-    insertTaskQuery,
-    [
-      taskData.projectID,
-      taskData.taskType,
-      taskData.summary,
-      taskData.taskManagerID,
-      taskData.status,
-      taskData.createdDate,
-      taskData.endDate,
-      taskData.priority,
-      taskData.description,
-    ],
-    (errTask, resultTask) => {
-      if (errTask) {
-        console.error(errTask);
-        res
-          .status(500)
-          .json({ error: "Lỗi máy chủ nội bộ khi thêm công việc" });
-      } else {
+  // Khởi tạo transaction
+  db.beginTransaction((err) => {
+    if (err) {
+      console.error("Begin transaction error:", err);
+      return res.status(500).json({ error: "Lỗi khi bắt đầu transaction" });
+    }
+
+    db.query(
+      insertTaskQuery,
+      [
+        taskData.projectID,
+        taskData.taskType,
+        taskData.summary,
+        taskData.taskManagerID,
+        taskData.status,
+        taskData.createdDate,
+        taskData.endDate,
+        taskData.priority,
+        taskData.description,
+        taskData.importance,
+      ],
+      (errTask, resultTask) => {
+        if (errTask) {
+          return db.rollback(() => {
+            console.error(errTask);
+            res
+              .status(500)
+              .json({ error: "Lỗi khi thêm công việc vào Tasks" });
+          });
+        }
+
         const insertedTaskId = resultTask.insertId;
 
         const insertTaskDetailsQuery = `
@@ -195,18 +209,33 @@ router.post("/addtask", (req, res) => {
           ],
           (errTaskDetails, resultTaskDetails) => {
             if (errTaskDetails) {
-              console.error(errTaskDetails);
-              res.status(500).json({
-                error: "Lỗi máy chủ nội bộ khi thêm chi tiết công việc",
+              return db.rollback(() => {
+                console.error(errTaskDetails);
+                res
+                  .status(500)
+                  .json({ error: "Lỗi khi thêm chi tiết công việc" });
               });
-            } else {
-              res.status(201).json({ message: "Thêm công việc thành công" });
             }
+
+            db.commit((commitErr) => {
+              if (commitErr) {
+                return db.rollback(() => {
+                  console.error(commitErr);
+                  res
+                    .status(500)
+                    .json({ error: "Lỗi khi commit transaction" });
+                });
+              }
+
+              res
+                .status(201)
+                .json({ message: "Thêm công việc thành công" });
+            });
           }
         );
       }
-    }
-  );
+    );
+  });
 });
 
 // Tạo API để lấy thông tin công việc dựa trên ID

@@ -13,7 +13,7 @@ router.post("/register", async (req, res) => {
       "INSERT INTO Users (picture, fullName, passwordHash, emailAddress, phoneNumber, roleID, lastLogin, createdDate) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)";
     db.query(
       query,
-      [picture, fullName, passwordHash, emailAddress, phoneNumber, roleID],
+      [picture, fullName, passwordHash, emailAddress, phoneNumber, 1],
       (err, result) => {
         if (err) {
           console.error("Error executing query:", err);
